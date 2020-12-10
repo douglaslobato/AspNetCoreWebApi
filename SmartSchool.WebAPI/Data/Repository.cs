@@ -64,7 +64,7 @@ namespace SmartSchool.WebAPI.Data
            return await PageList<Aluno>.CreateAsync(query, pageParams.PageNumber , pageParams.PageSize);
         }
 
-        public Aluno[] GetAllAlunosByDisciplinaId(int disciplinaId, bool includeProfessor = false)
+        public async Task<Aluno[]> GetAllAlunosByDisciplinaIdAsync(int disciplinaId, bool includeProfessor = false)
         {
             IQueryable<Aluno> query = _context.Alunos;
 
@@ -80,7 +80,7 @@ namespace SmartSchool.WebAPI.Data
                         .OrderBy(a => a.Id)
                         .Where(aluno => aluno.AlunosDisciplinas.Any(ad => ad.DisciplinaId == disciplinaId));
 
-            return query.ToArray();
+            return await query.ToArrayAsync();
         }
 
         public Aluno GetAlunoById(int alunoId, bool includeProfessor = false)
@@ -132,10 +132,8 @@ namespace SmartSchool.WebAPI.Data
 
             }
 
-            query = query.AsNoTracking().OrderBy(aluno => aluno.Id)
-                                        .Where(aluno => aluno.Disciplinas.Any(
-                                            d => d.AlunosDisciplinas.Any(ad => ad.DisciplinaId == disciplinaId)));
-
+            query = query.AsNoTracking().OrderBy(aluno => aluno.Id);
+                 
             return query.ToArray();
         }
 
@@ -155,6 +153,25 @@ namespace SmartSchool.WebAPI.Data
                                         .Where(professor => professor.Id == professorId);
 
             return query.FirstOrDefault();        
+    }
+            public Professor[] GetProfessorByAlunoId(int alunoId, bool includeProfessor = false)
+        {
+            IQueryable<Professor> query = _context.Professores;
+
+            if (includeProfessor)
+            {
+                query = query.Include(d => d.Disciplinas)
+                             .ThenInclude(ad => ad.AlunosDisciplinas)
+                             .ThenInclude(a => a.Aluno);
+
+            }
+
+            query = query.AsNoTracking().OrderBy(p => p.Id)
+                                                .Where(aluno => aluno.Disciplinas.Any(
+                                            d => d.AlunosDisciplinas.Any(ad => ad.AlunoId == alunoId)));
+
+
+            return query.ToArray();        
     }
 
 
